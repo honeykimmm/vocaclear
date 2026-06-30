@@ -43,3 +43,4 @@ if (!isPlaceholderConfig && typeof firebase !== "undefined") {
   db = null;
   firebaseReady = false;
 }
+
