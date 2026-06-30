@@ -8,12 +8,12 @@
 // 4. 키를 넣지 않으면 자동으로 "오프라인 모드"로 동작 (이 기기에만 점수 저장됨)
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDPLACEHOLDER_REPLACE_ME",
-  authDomain: "vocaclear-app.firebaseapp.com",
-  projectId: "vocaclear-app",
-  storageBucket: "vocaclear-app.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:placeholder"
+  apiKey: "AIzaSyADplvpryEN_ZYcQrHb-UOq0yjV9CP5a40",
+  authDomain: "vocaclear.firebaseapp.com",
+  projectId: "vocaclear",
+  storageBucket: "vocaclear.firebasestorage.app",
+  messagingSenderId: "930814173256",
+  appId: "1:930814173256:web:0d39c4fea2ca9ab9f8b87d"
 };
 
 let db = null;
@@ -43,4 +43,3 @@ if (!isPlaceholderConfig && typeof firebase !== "undefined") {
   db = null;
   firebaseReady = false;
 }
-
