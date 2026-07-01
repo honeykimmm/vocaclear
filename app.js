@@ -503,7 +503,7 @@ function renderTypingProfileForm() {
   return `
   <div class="card" style="padding:24px; margin-top:14px;">
     <span class="field-label">이름</span>
-    <input type="text" id="tpName" class="text-input" placeholder="예: 김디비" value="${state.profile ? escapeHtml(state.profile.name) : ''}" style="margin-bottom:14px;">
+    <input type="text" id="tpName" class="text-input" placeholder="예: 김민준" value="${state.profile ? escapeHtml(state.profile.name) : ''}" style="margin-bottom:14px;">
     <span class="field-label">선생님 / 반</span>
     ${renderTeacherClassPicker("tp", curClass)}
   </div>`;
@@ -554,9 +554,9 @@ function renderTypingRunning() {
   return `
   <div class="typing-active">
     <div class="typing-hud">
-      <div class="hud-item"><b>${t.idx + 1} / ${total}</b><span>문항</span></div>
-      <div class="hud-item"><b style="color:var(--mint)">${t.correct}</b><span>정답</span></div>
-      <div class="hud-item"><b style="color:var(--accent)">${t.wrong}</b><span>오답</span></div>
+      <div class="hud-item"><b id="tpHudIdx">${t.idx + 1} / ${total}</b><span>문항</span></div>
+      <div class="hud-item"><b id="tpHudCorrect" style="color:var(--mint)">${t.correct}</b><span>정답</span></div>
+      <div class="hud-item"><b id="tpHudWrong" style="color:var(--accent)">${t.wrong}</b><span>오답</span></div>
       <div class="hud-item"><b>${elapsed}s</b><span>경과</span></div>
     </div>
     <div class="typing-question">
@@ -699,27 +699,40 @@ function startTypingTest() {
 
 function submitTypingAnswer() {
   const t = state.typing;
-  if (t.submitting) return; // 중복 제출 방지 (Enter 연타 등)
+  if (t.submitting) return;
   const w = t.order[t.idx];
   if (!w) return;
   t.submitting = true;
 
   const userAns = t.input;
   const isCorrect = normalize(userAns) === normalize(w.word);
-  const reveal = document.getElementById("tpReveal");
-  const input = document.getElementById("tpInput");
 
   if (isCorrect) {
     t.correct++;
-    if (input) input.classList.add("correct");
-    if (reveal) reveal.textContent = "✓ 정답";
+    t.wrongList; // no push
   } else {
     t.wrong++;
-    if (input) input.classList.add("wrong");
-    if (reveal) reveal.textContent = `정답: ${w.word}`;
     t.wrongList.push({ ...w, userInput: userAns });
   }
-  if (input) input.disabled = true;
+
+  // DOM 직접 조작 — render() 없이 즉시 피드백 표시
+  const input = document.getElementById("tpInput");
+  const reveal = document.getElementById("tpReveal");
+  const hud = document.getElementById("tpHudCorrect");
+  const hudWrong = document.getElementById("tpHudWrong");
+  const hudIdx = document.getElementById("tpHudIdx");
+
+  if (input) {
+    input.disabled = true;
+    input.className = isCorrect ? "correct" : "wrong";
+  }
+  if (reveal) {
+    reveal.textContent = isCorrect ? "✓ 정답" : `✗  정답: ${w.word}`;
+    reveal.className = "typing-answer-reveal " + (isCorrect ? "reveal-correct" : "reveal-wrong");
+  }
+  if (hud) hud.textContent = t.correct;
+  if (hudWrong) hudWrong.textContent = t.wrong;
+  if (hudIdx) hudIdx.textContent = `${t.idx + 1} / ${t.order.length}`;
 
   setTimeout(() => {
     t.idx++;
@@ -730,9 +743,7 @@ function submitTypingAnswer() {
     } else {
       render();
     }
-  }, isCorrect ? 350 : 900);
-
-  render();
+  }, isCorrect ? 500 : 1200);
 }
 
 function finishTypingTest() {
@@ -863,8 +874,7 @@ function loadRankData(className) {
   if (firebaseReady && db) {
     rankUnsub = db.collection("vocaclear_scores")
       .where("className", "==", className)
-      .orderBy("correct", "desc")
-      .limit(50)
+      .limit(200)
       .onSnapshot((snap) => {
         const best = {};
         snap.forEach(doc => {
@@ -929,7 +939,7 @@ function renderProfile() {
       <p class="section-desc">이름과 반을 입력하면 그동안의 타이핑 테스트 기록을 확인할 수 있어요.</p>
       <div class="card" style="padding:24px; text-align:left;">
         <span class="field-label">이름</span>
-        <input type="text" id="profNameInput" class="text-input" placeholder="예: 김디비" style="margin-bottom:14px;">
+        <input type="text" id="profNameInput" class="text-input" placeholder="예: 김민준" style="margin-bottom:14px;">
         <span class="field-label">선생님 / 반</span>
         ${renderTeacherClassPicker("pf", profPickerTempClass)}
       </div>
@@ -1142,10 +1152,9 @@ function loadProfileHistory() {
     db.collection("vocaclear_scores")
       .where("name", "==", state.profile.name)
       .where("className", "==", state.profile.className)
-      .orderBy("createdAtMs", "asc")
       .get()
       .then(snap => {
-        const remote = snap.docs.map(d => d.data());
+        const remote = snap.docs.map(d => d.data()).sort((a, b) => (a.createdAtMs || a.createdAt || 0) - (b.createdAtMs || b.createdAt || 0));
         state.profileHistory = mergeRecords(remote, getLocalRecords());
         state.profileLoading = false;
         if (state.route === "profile") render();
@@ -1310,8 +1319,9 @@ function loadDashData(cls) {
   if (firebaseReady && db) {
     let ref = db.collection("vocaclear_scores");
     if (cls !== "전체") ref = ref.where("className", "==", cls);
-    dashUnsub = ref.orderBy("createdAtMs", "desc").limit(500).onSnapshot(snap => {
-      state.dashData = snap.docs.map(d => d.data());
+    dashUnsub = ref.limit(500).onSnapshot(snap => {
+      const data = snap.docs.map(d => d.data());
+      state.dashData = data.sort((a, b) => (b.createdAtMs || b.createdAt || 0) - (a.createdAtMs || a.createdAt || 0));
       state.dashLoading = false;
       if (state.route === "dash") {
         const el = document.getElementById("dashContent");

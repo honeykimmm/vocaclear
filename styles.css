@@ -422,15 +422,34 @@ input, select {
   font-family: var(--font-mono); font-size: 18px;
   border: 2px solid var(--rule); border-radius: var(--radius-m);
   background: var(--paper-raised); color: var(--ink); text-align: center;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 .typing-input-row input:focus { outline: none; border-color: var(--accent); }
-.typing-input-row input.correct { border-color: var(--mint); background: var(--mint-bg); }
-.typing-input-row input.wrong { border-color: var(--accent); background: var(--accent-bg); }
+.typing-input-row input.correct {
+  border: 3px solid var(--mint);
+  background: var(--mint-bg);
+  color: var(--mint);
+  font-weight: 700;
+}
+.typing-input-row input.wrong {
+  border: 3px solid var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 700;
+}
 
 .typing-answer-reveal {
   text-align: center; margin-top: 10px;
-  font-family: var(--font-mono); font-size: 13px; color: var(--accent);
-  min-height: 20px;
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+  min-height: 22px;
+  transition: color 0.1s ease;
+}
+.typing-answer-reveal.reveal-correct {
+  color: var(--mint);
+}
+.typing-answer-reveal.reveal-wrong {
+  color: var(--accent);
+  font-size: 13px;
 }
 
 /* ===================== 통계 공통 ===================== */
