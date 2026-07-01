@@ -503,7 +503,7 @@ function renderTypingProfileForm() {
   return `
   <div class="card" style="padding:24px; margin-top:14px;">
     <span class="field-label">이름</span>
-    <input type="text" id="tpName" class="text-input" placeholder="예: 김민준" value="${state.profile ? escapeHtml(state.profile.name) : ''}" style="margin-bottom:14px;">
+    <input type="text" id="tpName" class="text-input" placeholder="예: 김디비" value="${state.profile ? escapeHtml(state.profile.name) : ''}" style="margin-bottom:14px;">
     <span class="field-label">선생님 / 반</span>
     ${renderTeacherClassPicker("tp", curClass)}
   </div>`;
@@ -929,7 +929,7 @@ function renderProfile() {
       <p class="section-desc">이름과 반을 입력하면 그동안의 타이핑 테스트 기록을 확인할 수 있어요.</p>
       <div class="card" style="padding:24px; text-align:left;">
         <span class="field-label">이름</span>
-        <input type="text" id="profNameInput" class="text-input" placeholder="예: 김민준" style="margin-bottom:14px;">
+        <input type="text" id="profNameInput" class="text-input" placeholder="예: 김디비" style="margin-bottom:14px;">
         <span class="field-label">선생님 / 반</span>
         ${renderTeacherClassPicker("pf", profPickerTempClass)}
       </div>
