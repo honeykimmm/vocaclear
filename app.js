@@ -1237,12 +1237,13 @@ function renderDashTable() {
     <table class="dash-table">
       <thead>
         <tr>
-          <th>이름</th><th>선생님</th><th>반</th><th>응시 횟수</th><th>전체 평균</th><th>최근 3회 평균</th><th>추세</th><th>정확도 추이</th><th>최근 응시</th>
+          <th>이름</th><th>선생님</th><th>반</th><th>응시</th><th>전체 평균</th><th>최근 3회</th><th>추세</th><th>추이</th><th>최근</th><th></th>
         </tr>
       </thead>
       <tbody>
         ${students.map(s => {
           const { teacher, cls } = splitClassName(s.className);
+          const key = encodeURIComponent(s.name + "||" + s.className);
           return `
           <tr>
             <td style="font-weight:600;">${escapeHtml(s.name)}</td>
@@ -1256,6 +1257,9 @@ function renderDashTable() {
               <div class="mini-bar-track"><div class="mini-bar-fill" style="width:${s.last3Avg}%; background:${s.trend==='down' ? 'var(--accent)' : s.trend==='up' ? 'var(--mint)' : 'var(--gold)'}"></div></div>
             </td>
             <td style="font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);">${fmtDate(s.lastDate)}</td>
+            <td>
+              <button class="btn-dash-delete" data-key="${key}" data-name="${escapeHtml(s.name)}" title="${escapeHtml(s.name)} 기록 삭제">✕</button>
+            </td>
           </tr>`;
         }).join("")}
       </tbody>
@@ -1373,6 +1377,64 @@ function attachDashHandlers() {
   });
   const refreshBtn = document.getElementById("dashRefreshBtn");
   if (refreshBtn) refreshBtn.addEventListener("click", () => loadDashData(dashClass));
+
+  document.querySelectorAll(".btn-dash-delete").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = decodeURIComponent(btn.getAttribute("data-key"));
+      const name = btn.getAttribute("data-name");
+      const [studentName, className] = key.split("||");
+      const { teacher, cls } = splitClassName(className);
+      const confirmed = window.confirm(`'${name}' (${teacher} · ${cls}) 학생의 기록을 전부 삭제할까요?\n\n이 작업은 되돌릴 수 없어요.`);
+      if (confirmed) deleteStudentRecords(studentName, className);
+    });
+  });
+}
+
+function deleteStudentRecords(name, className) {
+  showToast("삭제 중...");
+
+  if (firebaseReady && db) {
+    db.collection("vocaclear_scores")
+      .where("name", "==", name)
+      .where("className", "==", className)
+      .get()
+      .then(snap => {
+        if (snap.empty) {
+          showToast("삭제할 기록이 없어요.");
+          return;
+        }
+        const batch = db.batch();
+        snap.docs.forEach(doc => batch.delete(doc.ref));
+        return batch.commit();
+      })
+      .then(() => {
+        deleteLocalRecords(name, className);
+        showToast(`'${name}' 학생 기록을 삭제했어요.`);
+        state._dashInited = false;
+        loadDashData(dashClass);
+      })
+      .catch(err => {
+        console.error("삭제 실패", err);
+        showToast("삭제에 실패했어요. 다시 시도해주세요.");
+      });
+  } else {
+    deleteLocalRecords(name, className);
+    state._dashInited = false;
+    loadDashData(dashClass);
+    showToast(`'${name}' 학생 기록을 삭제했어요. (로컬)`);
+  }
+}
+
+function deleteLocalRecords(name, className) {
+  try {
+    const all = getLocalRecords();
+    const filtered = all.filter(r => !(r.name === name && r.className === className));
+    localStorage.setItem(LS_KEYS.history, JSON.stringify(filtered));
+    if (state.profile && state.profile.name === name && state.profile.className === className) {
+      state.profileHistory = [];
+      state._profileLoadedFor = null;
+    }
+  } catch (e) { console.error(e); }
 }
 
 /* ============================================

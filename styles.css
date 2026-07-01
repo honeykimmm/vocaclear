@@ -546,6 +546,24 @@ input, select {
 .trend-down { color: var(--accent); font-weight: 600; }
 .trend-flat { color: var(--ink-faint); }
 
+.btn-dash-delete {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-s);
+  padding: 3px 7px;
+  cursor: pointer;
+  background: none;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+  white-space: nowrap;
+}
+.btn-dash-delete:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
 .mini-bar-cell { width: 90px; }
 .mini-bar-track { width: 100%; height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
 .mini-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
